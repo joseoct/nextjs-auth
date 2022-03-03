@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
-import { createContext, ReactNode, useEffect, useState } from 'react'; import { api } from '../services/api';
-import { setCookie, parseCookies } from 'nookies';
+import { createContext, ReactNode, useEffect, useState } from 'react'; import { api, signOut } from '../services/api';
+import { setCookie, parseCookies, destroyCookie } from 'nookies';
 
 type User = {
   email: string;
@@ -33,11 +33,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const { 'nextauth.token': token  } = parseCookies();
 
     if (token) {
-      api.get('/me').then(response => {
-        const { email, permissions, roles } = response.data;
+      api.get('/me')
+        .then(response => {
+          const { email, permissions, roles } = response.data;
 
-        setUser({ email, permissions, roles });
-      });
+          setUser({ email, permissions, roles });
+        })
+        .catch(() => {
+          signOut();
+        })
+
     }
   }, [])
 
@@ -68,7 +73,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         roles,
       })
 
-      api.defaults.headers['Authroization'] = `Bearer ${token}`;
+      api.defaults.headers['Authorization'] = `Bearer ${token}`;
 
       router.push('/dashboard');
     } catch (error) {
