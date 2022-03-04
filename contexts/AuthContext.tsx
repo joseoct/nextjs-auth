@@ -27,16 +27,37 @@ type AuthProviderProps = {
 
 export const AuthContext = createContext({} as AuthContextData);
 
+let authChannel: BroadcastChannel;
+
 export function signOut() {
   destroyCookie(undefined, 'nextauth.token');
   destroyCookie(undefined, 'nextauth.refreshToken');
 
   Router.push('/');
+  
+  authChannel.postMessage('signOut');
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User>(null);
   const isAuthenticated = !!user;
+
+  useEffect(() => {
+    authChannel = new BroadcastChannel('auth');
+
+    authChannel.onmessage = (message) => {
+      switch (message.data){
+        case 'signOut':
+          Router.push('/');
+          break;
+        case 'signIn':
+          Router.push('/dashboard');
+          break;
+        default:
+          break;
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const { 'nextauth.token': token  } = parseCookies();
@@ -82,6 +103,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       api.defaults.headers['Authorization'] = `Bearer ${token}`;
 
       Router.push('/dashboard');
+
+      authChannel.postMessage('signIn');
     } catch (error) {
       console.log(error);
     }
