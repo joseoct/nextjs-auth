@@ -61,13 +61,14 @@ export function setupApiClient(ctx = undefined) {
                 );
                 failedRequestQueue = [];
 
-                if (process.browser) {
-                  signOut();
-                }
               })
               .catch((err) => {
                 failedRequestQueue.forEach((request) => request.onFailure(err));
                 failedRequestQueue = [];
+
+                if (process.browser) {
+                  signOut();
+                }
               })
               .finally(() => {
                 isRefreshing = false;
